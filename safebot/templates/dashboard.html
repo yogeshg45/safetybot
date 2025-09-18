@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Community Safety Reporter{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-chart-bar me-2"></i>
+                Safety Dashboard
+            </h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Reports</h5>
+                            <h3 class="mb-0" id="total-reports">-</h3>
+                        </div>
+                        <i class="fas fa-file-alt fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">High Severity</h5>
+                            <h3 class="mb-0" id="high-severity">-</h3>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">This Week</h5>
+                            <h3 class="mb-0" id="this-week">-</h3>
+                        </div>
+                        <i class="fas fa-calendar-week fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Locations</h5>
+                            <h3 class="mb-0" id="unique-locations">-</h3>
+                        </div>
+                        <i class="fas fa-map-marker-alt fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Incidents Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Recent Incidents
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="loading-incidents" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading incident data...</p>
+                    </div>
+
+                    <div id="incidents-table-container" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="incidents-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Location</th>
+                                        <th>Type</th>
+                                        <th>Severity</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incidents-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="no-incidents" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+                        <h5>No incidents reported yet</h5>
+                        <p class="text-muted">Incident reports will appear here once they are submitted.</p>
+                        <a href="{{ url_for('report_incident') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Report First Incident
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dashboard functionality
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+});
+
+function loadDashboardData() {
+    fetch('/api/incidents')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading incidents:', data.error);
+                showErrorState();
+                return;
+            }
+
+            updateStatistics(data);
+            populateIncidentsTable(data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorState();
+        });
+}
+
+function updateStatistics(incidents) {
+    const totalReports = incidents.length;
+    const highSeverity = incidents.filter(i => i.severity >= 4).length;
+    const thisWeek = incidents.filter(i => {
+        const incidentDate = new Date(i.date_reported);
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        return incidentDate >= oneWeekAgo;
+    }).length;
+    const uniqueLocations = [...new Set(incidents.map(i => i.location))].length;
+
+    document.getElementById('total-reports').textContent = totalReports;
+    document.getElementById('high-severity').textContent = highSeverity;
+    document.getElementById('this-week').textContent = thisWeek;
+    document.getElementById('unique-locations').textContent = uniqueLocations;
+}
+
+function populateIncidentsTable(incidents) {
+    const loadingDiv = document.getElementById('loading-incidents');
+    const tableContainer = document.getElementById('incidents-table-container');
+    const noIncidentsDiv = document.getElementById('no-incidents');
+    const tbody = document.getElementById('incidents-tbody');
+
+    loadingDiv.style.display = 'none';
+
+    if (incidents.length === 0) {
+        noIncidentsDiv.style.display = 'block';
+        return;
+    }
+
+    tableContainer.style.display = 'block';
+    tbody.innerHTML = '';
+
+    incidents.forEach(incident => {
+        const row = document.createElement('tr');
+
+        const severityBadge = getSeverityBadge(incident.severity);
+        const shortDescription = incident.description.length > 100 
+            ? incident.description.substring(0, 100) + '...' 
+            : incident.description;
+
+        row.innerHTML = `
+            <td>${formatDate(incident.date_reported)}</td>
+            <td>
+                <i class="fas fa-map-marker-alt me-1"></i>
+                ${incident.location}
+            </td>
+            <td>
+                <span class="badge bg-secondary">${incident.incident_type}</span>
+            </td>
+            <td>${severityBadge}</td>
+            <td title="${incident.description}">${shortDescription}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+function getSeverityBadge(severity) {
+    const badges = {
+        1: '<span class="badge bg-success">1 - Low</span>',
+        2: '<span class="badge bg-info">2 - Minor</span>',
+        3: '<span class="badge bg-warning">3 - Moderate</span>',
+        4: '<span class="badge bg-danger">4 - High</span>',
+        5: '<span class="badge bg-dark">5 - Critical</span>'
+    };
+    return badges[severity] || '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+function showErrorState() {
+    const loadingDiv = document.getElementById('loading-incidents');
+    loadingDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+        <h5>Error Loading Data</h5>
+        <p class="text-muted">Unable to load incident data. Please try refreshing the page.</p>
+        <button class="btn btn-primary" onclick="loadDashboardData()">
+            <i class="fas fa-refresh me-2"></i>
+            Retry
+        </button>
+    `;
+}
+</script>
+{% endblock %}

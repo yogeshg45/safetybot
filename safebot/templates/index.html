@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Community Safety Reporter{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-shield-alt me-3"></i>
+            Community Safety Reporter
+        </h1>
+        <p class="lead mb-4">
+            Help keep our community safe by reporting incidents and checking area safety status
+        </p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('report_incident') }}" class="btn btn-light btn-lg me-md-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Report Incident
+                    </a>
+                    <a href="{{ url_for('check_safety') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-search me-2"></i>
+                        Check Safety
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <h5 class="card-title">Report Incidents</h5>
+                    <p class="card-text">
+                        Quickly report safety incidents in your area to help others stay informed and safe.
+                    </p>
+                    <a href="{{ url_for('report_incident') }}" class="btn btn-primary">
+                        Start Reporting
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-search fa-3x"></i>
+                    </div>
+                    <h5 class="card-title">Check Safety Status</h5>
+                    <p class="card-text">
+                        Get real-time safety information about specific locations and areas in your community.
+                    </p>
+                    <a href="{{ url_for('check_safety') }}" class="btn btn-success">
+                        Check Areas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-info mb-3">
+                        <i class="fas fa-chart-bar fa-3x"></i>
+                    </div>
+                    <h5 class="card-title">View Dashboard</h5>
+                    <p class="card-text">
+                        Access comprehensive analytics and trends about safety incidents in your community.
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-info">
+                        View Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>
+                    How It Works
+                </h5>
+                <p class="mb-0">
+                    Our AI-powered system helps you report incidents through natural conversation and provides 
+                    real-time safety assessments based on community-reported data. All reports are stored 
+                    securely and help create a safer community for everyone.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

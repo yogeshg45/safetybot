@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Check Safety - Community Safety Reporter{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-search me-2"></i>
+                        Check Area Safety
+                    </h3>
+                    <p class="mb-0 mt-2">Ask about safety conditions in specific locations</p>
+                </div>
+                <div class="card-body">
+                    <div id="safety-chat-container" class="mb-4">
+                        <div id="safety-chat-messages" class="border rounded p-3 mb-3" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                            <div class="bot-message mb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-success text-white rounded-circle p-2 me-3">
+                                        <i class="fas fa-robot"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="bg-white rounded p-3 shadow-sm">
+                                            <p class="mb-0">
+                                                Hi! I can help you check the safety status of any location. 
+                                                Just tell me which area you're asking about and I'll provide 
+                                                information based on recent incident reports.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <input type="text" id="safety-user-input" class="form-control" 
+                                   placeholder="Ask about safety in a specific area..." 
+                                   maxlength="500">
+                            <button class="btn btn-success" type="button" id="safety-send-btn" onclick="sendSafetyMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                                Send
+                            </button>
+                        </div>
+
+                        <div id="safety-loading" class="text-center mt-3" style="display: none;">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Checking safety data...</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Safety Check Examples
+                        </h6>
+                        <ul class="mb-0">
+                            <li>"Is downtown Chennai safe at night?"</li>
+                            <li>"Any recent incidents near T. Nagar?"</li>
+                            <li>"How safe is Marina Beach area?"</li>
+                            <li>"Safety status of Anna Nagar?"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Safety check chat functionality
+let safetyChatMessages = document.getElementById('safety-chat-messages');
+let safetyUserInput = document.getElementById('safety-user-input');
+let safetySendBtn = document.getElementById('safety-send-btn');
+let safetyLoading = document.getElementById('safety-loading');
+
+function addSafetyMessage(message, isUser = false) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = isUser ? 'user-message mb-3' : 'bot-message mb-3';
+
+    const iconClass = isUser ? 'fas fa-user' : 'fas fa-robot';
+    const bgClass = isUser ? 'bg-primary' : 'bg-success';
+    const alignClass = isUser ? 'justify-content-end' : '';
+
+    messageDiv.innerHTML = `
+        <div class="d-flex align-items-start ${alignClass}">
+            ${!isUser ? `
+                <div class="${bgClass} text-white rounded-circle p-2 me-3">
+                    <i class="${iconClass}"></i>
+                </div>
+            ` : ''}
+            <div class="flex-grow-1">
+                <div class="bg-white rounded p-3 shadow-sm ${isUser ? 'ms-5' : ''}">
+                    <p class="mb-0">${message}</p>
+                </div>
+            </div>
+            ${isUser ? `
+                <div class="${bgClass} text-white rounded-circle p-2 ms-3">
+                    <i class="${iconClass}"></i>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    safetyChatMessages.appendChild(messageDiv);
+    safetyChatMessages.scrollTop = safetyChatMessages.scrollHeight;
+}
+
+function sendSafetyMessage() {
+    const message = safetyUserInput.value.trim();
+    if (!message) return;
+
+    addSafetyMessage(message, true);
+    safetyUserInput.value = '';
+    safetySendBtn.disabled = true;
+    safetyLoading.style.display = 'block';
+
+    fetch('/api/chat/safety', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        safetyLoading.style.display = 'none';
+        safetySendBtn.disabled = false;
+
+        if (data.error) {
+            addSafetyMessage(`Error: ${data.error}`, false);
+        } else {
+            addSafetyMessage(data.response, false);
+        }
+    })
+    .catch(error => {
+        safetyLoading.style.display = 'none';
+        safetySendBtn.disabled = false;
+        addSafetyMessage('Sorry, there was an error processing your request. Please try again.', false);
+    });
+}
+
+// Handle Enter key
+safetyUserInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendSafetyMessage();
+    }
+});
+</script>
+{% endblock %}
